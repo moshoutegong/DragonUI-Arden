@@ -21,7 +21,24 @@ jobs:
           extracted="$RUNNER_TEMP/arden"
           curl --fail --location --retry 3 --output "$archive" "$ARCHIVE_URL"
           printf '%s  %s\n' "$ARCHIVE_SHA" "$archive" | sha256sum --check
-          unzip -q "$archive" 'DragonUI/*' 'DragonUI_Options/*' -d "$extracted"
+          python3 - "$archive" "$extracted" <<'PY'
+          import shutil
+          import sys
+          import zipfile
+          from pathlib import Path, PurePosixPath
+
+          with zipfile.ZipFile(sys.argv[1]) as archive:
+              for entry in archive.infolist():
+                  name = PurePosixPath(entry.filename.replace(chr(92), "/"))
+                  if entry.is_dir() or not name.parts or name.parts[0] not in {"DragonUI", "DragonUI_Options"}:
+                      continue
+                  if ".." in name.parts:
+                      raise ValueError(f"Unexpected ZIP path: {name}")
+                  target = Path(sys.argv[2]).joinpath(*name.parts)
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  with archive.open(entry) as source, target.open("wb") as output:
+                      shutil.copyfileobj(source, output)
+          PY
           test -f "$extracted/DragonUI/DragonUI.toc"
           test -f "$extracted/DragonUI_Options/DragonUI_Options.toc"
           test ! -e DragonUI
@@ -31,5 +48,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git rm .github/workflows/import-arden.yml
           git add -- DragonUI DragonUI_Options
+          test "$(git write-tree --prefix=DragonUI/)" = 7716f2aa4164a14485f6e80ef748050943e35dd3
+          test "$(git write-tree --prefix=DragonUI_Options/)" = 2bedb3bb08ef7ba33ddb72cd540eab6b8b668e2d
           git commit -m '导入 DragonUI-Arden 插件源码'
           git push origin HEAD:main
