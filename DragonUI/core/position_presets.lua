@@ -661,8 +661,8 @@ local function SyncAttachedSmallFrameOverlay(configKey)
     end
 
     local mainFrame
-    if configKey == "tot" and TargetFrameToT then
-        mainFrame = TargetFrameToT
+    if configKey == "tot" then
+        mainFrame = addon.TargetOfTarget and addon.TargetOfTarget.frame or TargetFrameToT
     elseif configKey == "fot" and FocusFrameToT then
         mainFrame = FocusFrameToT
     end

@@ -458,12 +458,14 @@ local function ApplyDragonAuraLayout(frame)
 
     local detached = ShouldUseDetachedAuraLayout(frame)
     -- Blizzard's 2 short rows are a FrameXML local; the ToT at retail's spot leaves room for a third.
-    local shortRows = not detached and not frame.buffsOnTop and frame.totFrame and frame.totFrame:IsShown()
-        and 3 or nil
+    local customToT = frame == TargetFrame and addon.TargetOfTarget and addon.TargetOfTarget.frame
+    local companion = customToT or frame.totFrame
+    local haveToT = not detached and companion and companion:IsShown() and not companion.DragonUI_SuppressAlpha
+    local shortRows = haveToT and not frame.buffsOnTop and 3 or nil
     local buffSize, debuffSize = GetCustomAuraSizes()
     local blizzardSpacing = not detached and not buffSize and not IsBBFAuraLayoutActive(frame)
     -- With Blizzard's spacing only a third row beside the lowered ToT differs from Blizzard's own pass.
-    if blizzardSpacing and not hiding and (not shortRows or (frame.auraRows or 0) <= 2) then
+    if not customToT and blizzardSpacing and not hiding and (not shortRows or (frame.auraRows or 0) <= 2) then
         return
     end
     buffSize = buffSize or SMALL_AURA_SIZE
@@ -489,7 +491,6 @@ local function ApplyDragonAuraLayout(frame)
     frame.spellbarAnchor = nil
 
     -- Attached mode mirrors Blizzard: shrink rows beside a visible ToT, expand back after NUM_TOT_AURA_ROWS.
-    local haveToT = not detached and frame.totFrame and frame.totFrame:IsShown()
     local totRowWidth = frame.TOT_AURA_ROW_WIDTH or 101
     local chromeGap = not blizzardSpacing and addon.GetAuraChromeGap
     local buffGap = chromeGap and chromeGap(buffSize + largeDelta) or 0
@@ -512,6 +513,10 @@ local function ApplyDragonAuraLayout(frame)
     if frame.spellbar and _G.Target_Spellbar_AdjustPosition then
         _G.Target_Spellbar_AdjustPosition(frame.spellbar)
     end
+end
+
+function addon.RelayoutTargetAurasForToT()
+    ApplyDragonAuraLayout(TargetFrame)
 end
 
 -- Re-runs the full Blizzard update chain (layout -> our hook -> spellbar -> castbar) after config changes.

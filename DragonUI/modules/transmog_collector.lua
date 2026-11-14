@@ -13,8 +13,8 @@ local TransmogCollector = {
 
 if addon.RegisterModule then
     addon:RegisterModule("transmog_collector", TransmogCollector,
-        "Transmog Collector",
-        "Automatically collect new transmog appearances when looting items.",
+        L["Transmog Collector"],
+        L["Automatically collect new transmog appearances when looting items."],
         {
             lifecycle = {
                 apply   = "ApplyTransmogCollectorSystem",

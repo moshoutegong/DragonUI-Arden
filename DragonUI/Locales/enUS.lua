@@ -1334,3 +1334,5 @@ L["Custom raid frames: flat skin, boss debuffs, raid icons, resurrect indicator,
 L["Frame Enhancements"] = true
 L["Unit frame features ported from BetterBlizzFrames"] = true
 L["Test Cast"] = true
+L["Summon Mount"] = true
+L["Dismiss Mount"] = true

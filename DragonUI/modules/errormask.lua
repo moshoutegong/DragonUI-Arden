@@ -104,3 +104,25 @@ loader:SetScript("OnEvent", function(self, event, arg1)
         addon.ApplyErrorMask()
     end
 end)
+
+-- Some clients open the protected-action dialog with an empty body.
+hooksecurefunc("StaticPopup_Show", function(which, addonName)
+    if which ~= "ADDON_ACTION_FORBIDDEN" and which ~= "ADDON_ACTION_BLOCKED" then return end
+    addon:After(0, function()
+        for i = 1, (STATICPOPUP_NUMDIALOGS or 4) do
+            local popup = _G["StaticPopup" .. i]
+            local text = _G["StaticPopup" .. i .. "Text"]
+            if popup and popup:IsShown() and popup.which == which and text then
+                local current = text:GetText()
+                if not current or not current:find("%S") then
+                    local name = type(addonName) == "string" and addonName or ""
+                    local chinese = addon.GetActiveLocale and addon.GetActiveLocale() == "zhCN"
+                    local message = chinese and "游戏阻止了受保护的界面操作。" or "The game blocked a protected interface action."
+                    text:SetText(name ~= "" and (name .. "\n" .. message) or message)
+                    text:Show()
+                    if StaticPopup_Resize then StaticPopup_Resize(popup, which) end
+                end
+            end
+        end
+    end)
+end)

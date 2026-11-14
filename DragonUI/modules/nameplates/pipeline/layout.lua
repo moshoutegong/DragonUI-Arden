@@ -846,9 +846,10 @@ function NP.layout.ApplyNameplateFonts(plateData)
     end
 
     local cfg = NP.config.GetCfg()
-    -- Modern health text is sized like the name; the outline is chosen per name position.
     local modern = NP.config.IsRetailSkin()
-    local hpNumSize = modern and nameSize or (7 + (cfg.healthNumberFontSize or 2))
+    local nameOverlay = NP.config.IsNameOverlayBar()
+    local hpNumSize = 7 + (cfg.healthNumberFontSize or 2)
+    local hpRowSize = nameOverlay and hpNumSize or nameSize
     -- The client matches "OUTLINE" inside the flags, so THINOUTLINE draws a plain outline here.
     local outline
     if NP.config.IsNameOverlayBar() then
@@ -878,7 +879,7 @@ function NP.layout.ApplyNameplateFonts(plateData)
         return math.max(1, math.floor(px * unit + 0.5)) / unit
     end
     applyFont(plateData.minaName, snap(plateData.minaName, nameSize), textFlags)
-    applyFont(plateData.minaHpPct, snap(plateData.minaHpPct, nameSize), textFlags)
+    applyFont(plateData.minaHpPct, snap(plateData.minaHpPct, hpRowSize), textFlags)
     applyFont(plateData.minaSubTitle, math.max(8, nameSize - 2))
     applyFont(plateData.minaHpNum, snap(plateData.minaHpNum, hpNumSize), textFlags)
     applyFont(plateData.minaHpBarPct, snap(plateData.minaHpBarPct, hpNumSize), textFlags)
@@ -913,7 +914,7 @@ function NP.layout.ApplyNameplateFonts(plateData)
         plateData.minaName:SetHeight(rowH)
     end
     if plateData.minaHpPct then
-        plateData.minaHpPct:SetHeight(rowH)
+        plateData.minaHpPct:SetHeight(math.max(rowH, hpRowSize))
     end
     if plateData.minaNameRow then
         plateData.minaNameRow:SetHeight(rowH)
@@ -1009,7 +1010,7 @@ function NP.layout.EnsureMinaStack(plateData)
         return
     end
 
-    plateData.minaHp = NP.discovery.CreateMinaBar(visualRoot, C.MINA_TEX .. "bar-fill", 1, 0.1, 0.1)
+    plateData.minaHp = NP.discovery.CreateMinaBar(visualRoot, NP.layout.GetHealthBarTexture(), 1, 0.1, 0.1)
     plateData.minaPo = NP.discovery.CreateMinaBar(visualRoot, C.MINA_TEX .. "bar-fill", 0, 0.5, 1)
     plateData.minaPo:Hide()
 
@@ -1022,14 +1023,19 @@ function NP.layout.EnsureMinaStack(plateData)
     plateData.minaTarget.tex = targetTex
 
     plateData.minaTarget.arrowL = plateData.minaTarget:CreateTexture(nil, "ARTWORK")
-    plateData.minaTarget.arrowL:SetTexture(C.MINA_TEX .. "arrowright")
+    plateData.minaTarget.arrowL:SetTexture(C.MINA_TEX .. "arrowleft")
     plateData.minaTarget.arrowL:SetSize(20, 20)
-    plateData.minaTarget.arrowL:SetPoint("RIGHT", plateData.minaTarget, "LEFT", -2, 0)
+    plateData.minaTarget.arrowL:SetPoint("RIGHT", plateData.minaTarget, "LEFT", 4, 0)
 
     plateData.minaTarget.arrowR = plateData.minaTarget:CreateTexture(nil, "ARTWORK")
-    plateData.minaTarget.arrowR:SetTexture(C.MINA_TEX .. "arrowleft")
+    plateData.minaTarget.arrowR:SetTexture(C.MINA_TEX .. "arrowright")
     plateData.minaTarget.arrowR:SetSize(20, 20)
-    plateData.minaTarget.arrowR:SetPoint("LEFT", plateData.minaTarget, "RIGHT", 2, 0)
+    plateData.minaTarget.arrowR:SetPoint("LEFT", plateData.minaTarget, "RIGHT", -4, 0)
+    local arrowAbove = plateData.minaTarget:CreateTexture(nil, "OVERLAY")
+    arrowAbove:SetTexture(C.MINA_TEX .. "target-neon-red-arrow")
+    arrowAbove:SetSize(50, 50)
+    arrowAbove:Hide()
+    plateData.minaTarget.arrowAbove = arrowAbove
     plateData.minaTarget:Hide()
 
     local fontPath = NP.config.GetNameplateFont()
@@ -1151,6 +1157,17 @@ function NP.layout.GetNameOverlayIconY()
     return base + (cfg.eliteIconOffsetY or 0)
 end
 
+-- Keep the original fill when a saved shared-media texture is unavailable.
+function NP.layout.GetHealthBarTexture()
+    local name = NP.config.GetCfg().healthBarTexture
+    local media = LibStub("LibSharedMedia-3.0", true)
+    if media and type(name) == "string" and name ~= "DragonUI默认" then
+        local texture = media:HashTable("statusbar")[name]
+        if texture then return texture, true end
+    end
+    return C.MINA_TEX .. "bar-fill", false
+end
+
 function NP.layout.LayoutMinaStack(plateData)
     local border = plateData.border
     local hp = plateData.minaHp
@@ -1172,6 +1189,14 @@ function NP.layout.LayoutMinaStack(plateData)
 
     hp:ClearAllPoints()
     hp:SetSize(visW, barH)
+    local fillTexture, customFill = NP.layout.GetHealthBarTexture()
+    if hp._duiHealthFill ~= fillTexture then
+        hp._duiHealthFill = fillTexture
+        hp:SetStatusBarTexture(fillTexture)
+        NP.discovery.ApplyBarMask(hp)
+        hp._fillClipRight = nil
+    end
+    hp._duiCustomHealthFill = customFill
     hp:SetPoint("CENTER", visualRoot, "CENTER", ox, oy)
     if hp.minaBg then
         local bgTex = (cfg.healthBarBackground == "castbar") and "bar-bg" or "bar-bg-health"
@@ -1191,7 +1216,7 @@ function NP.layout.LayoutMinaStack(plateData)
         target:ClearAllPoints()
         target:SetSize(visW + 1, barH + 1)
         target:SetPoint("CENTER", hp, "CENTER", 0, 0)
-        local arrowSize = math.max(barH * 2, 14)
+        local arrowSize = math.max(20, math.min(30, barH * 1.75))
         target.arrowL:SetSize(arrowSize, arrowSize)
         target.arrowR:SetSize(arrowSize, arrowSize)
     end
@@ -1218,8 +1243,16 @@ function NP.layout.LayoutMinaStack(plateData)
             plateData.minaNameRow:SetPoint("BOTTOMRIGHT", hp, "TOPRIGHT", -padX, 3)
         end
     end
+    if target then
+        local arrowAnchor = not nameOverlay and plateData.minaNameRow or hp
+        target.arrowAbove:ClearAllPoints()
+        target.arrowAbove:SetPoint("BOTTOM", arrowAnchor, "TOP", 0, 5)
+    end
     -- Child widths use row width minus padding.
     visW = visW - (padX * 2)
+
+    local hpTextX = cfg.healthTextOffsetX or 0
+    local hpTextY = cfg.healthTextOffsetY or 0
 
     -- Unsized, so the name can truncate against the text's real width.
     if plateData.minaHpPct and plateData.minaNameRow then
@@ -1227,7 +1260,8 @@ function NP.layout.LayoutMinaStack(plateData)
             plateData.minaHpPct:SetParent(plateData.minaNameRow)
         end
         plateData.minaHpPct:ClearAllPoints()
-        plateData.minaHpPct:SetPoint("RIGHT", plateData.minaNameRow, "RIGHT", 0, 0)
+        plateData.minaHpPct:SetPoint("RIGHT", plateData.minaNameRow, "RIGHT",
+            nameOverlay and hpTextX or 0, nameOverlay and hpTextY or 0)
     end
 
     if plateData.minaName and plateData.minaNameRow then
@@ -1257,18 +1291,18 @@ function NP.layout.LayoutMinaStack(plateData)
         text:ClearAllPoints()
         if placement == "barCenter" then
             text:SetJustifyH("CENTER")
-            text:SetPoint("CENTER", hp, "CENTER", 0, 0)
+            text:SetPoint("CENTER", hp, "CENTER", hpTextX, hpTextY)
         elseif placement == "barRight" then
             text:SetJustifyH("RIGHT")
-            text:SetPoint("RIGHT", hp, "RIGHT", -inset, 0)
+            text:SetPoint("RIGHT", hp, "RIGHT", -inset + hpTextX, hpTextY)
         else
             text:SetJustifyH("LEFT")
-            text:SetPoint("LEFT", hp, "LEFT", inset, 0)
+            text:SetPoint("LEFT", hp, "LEFT", inset + hpTextX, hpTextY)
         end
     end
     if plateData.minaHpBarPct then
         plateData.minaHpBarPct:ClearAllPoints()
-        plateData.minaHpBarPct:SetPoint("RIGHT", hp, "RIGHT", -inset, 0)
+        plateData.minaHpBarPct:SetPoint("RIGHT", hp, "RIGHT", -inset + hpTextX, hpTextY)
     end
     -- The placement may have moved the text to another FontString; SyncHealth must rewrite it.
     plateData._hpTextCur, plateData._hpTextMax = nil, nil

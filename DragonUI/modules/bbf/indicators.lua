@@ -317,9 +317,10 @@ end
 
 -- Reuse DragonUI's rest-glow geometry (normal / fat / elite all differ).
 local function LayoutStealthFrame(frame)
-    local dragonFrame = _G.DragonUIUnitframeFrame
-    local refFrame = _G.DragonUIStatusGlow
-    local refTex = dragonFrame and dragonFrame.DragonUIStatusTexture
+    local refFrame, refTex
+    if addon.GetPlayerStatusGlowArt then
+        refFrame, refTex = addon.GetPlayerStatusGlowArt()
+    end
     frame:ClearAllPoints()
     if refFrame and refFrame:GetNumPoints() > 0 and refTex and refTex:GetTexture() then
         frame:SetAllPoints(refFrame)
@@ -350,6 +351,8 @@ local function UpdateStealth()
         frame:Hide()
     end
 end
+
+addon.RefreshStealthGlow = UpdateStealth
 
 BBF.RegisterEvent("UPDATE_STEALTH", UpdateStealth)
 BBF.RegisterEvent("UNIT_AURA", function(event, unit)

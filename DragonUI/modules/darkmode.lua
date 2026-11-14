@@ -520,7 +520,8 @@ local function DarkenUnitFrameBorders(tint)
     local targetPvPCircle = _G["DragonUI_TargetPvPCircle"]
     if targetPvPCircle then DarkenTexture(targetPvPCircle, tint) end
 
-    DarkenFrameBorderTextures(_G["TargetFrameToT"], tint)
+    local tot = addon.TargetOfTarget and addon.TargetOfTarget.frame or _G.TargetFrameToT
+    DarkenFrameBorderTextures(tot, tint)
 
     -- DragonUI custom ToT border/background (created by small_frame factory)
     local totBorder = _G["ToTBorder"]

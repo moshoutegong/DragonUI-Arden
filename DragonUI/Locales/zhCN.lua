@@ -1346,3 +1346,5 @@ L["Custom raid frames: flat skin, boss debuffs, raid icons, resurrect indicator,
 L["Frame Enhancements"] = "框体增强"
 L["Unit frame features ported from BetterBlizzFrames"] = "移植自 BetterBlizzFrames 的单位框体功能"
 L["Test Cast"] = "测试施法"
+L["Summon Mount"] = "召唤坐骑"
+L["Dismiss Mount"] = "解散坐骑"

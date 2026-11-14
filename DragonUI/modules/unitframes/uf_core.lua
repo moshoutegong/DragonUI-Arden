@@ -359,6 +359,79 @@ UF.CLASSES_ALPHA_MAP = {
     HERO           = {0, 4},
 }
 
+-- Arden class colors are not always present in the client palette.
+UF.CLASS_COLOR_FALLBACK = {
+    HUNTER = {0.67, 0.83, 0.45},      WARLOCK = {0.58, 0.51, 0.79},
+    PRIEST = {1.0, 1.0, 1.0},         PALADIN = {0.96, 0.55, 0.73},
+    MAGE = {0.41, 0.8, 0.94},         ROGUE = {1.0, 0.96, 0.41},
+    DRUID = {1.0, 0.49, 0.04},        SHAMAN = {0.0, 0.44, 0.87},
+    WARRIOR = {0.78, 0.61, 0.43},     DEATHKNIGHT = {0.77, 0.12, 0.23},
+    HERO = {1, 0.84, 0.14},           BARBARIAN = {0.54, 0.20, 0.01},
+    WITCHDOCTOR = {0.96, 0.00, 1.00}, DEMONHUNTER = {0.46, 0.98, 0.00},
+    WITCHHUNTER = {0.33, 0.20, 0.81}, STORMBRINGER = {0.00, 0.49, 0.93},
+    FLESHWARDEN = {0.99, 0.00, 0.02}, GUARDIAN = {0.61, 0.58, 0.51},
+    MONK = {1.00, 0.98, 0.70},        SONOFARUGAL = {0.64, 0.00, 0.00},
+    RANGER = {0.75, 0.94, 0.42},      PROPHET = {0.42, 0.65, 0.00},
+    PYROMANCER = {1.00, 0.38, 0.07},  CULTIST = {0.61, 0.27, 0.95},
+    NECROMANCER = {0.27, 0.86, 0.61}, SUNCLERIC = {1.00, 0.70, 0.25},
+    TINKER = {0.85, 0.85, 0.85},      REAPER = {0.04, 0.53, 0.42},
+    WILDWALKER = {0.89, 0.55, 0.35},  STARCALLER = {0.56, 1.00, 1.00},
+    SPIRITMAGE = {0.25, 0.78, 0.92},  CHRONOMANCER = {1.00, 0.93, 0.29},
+}
+
+UF.CLASS_TOKEN_ALIASES = {
+    FELSWORN = "DEMONHUNTER", TEMPLAR = "MONK", BLOODMAGE = "SONOFARUGAL",
+    KNIGHTOFXOROTH = "FLESHWARDEN", KNIGHT_OF_XOROTH = "FLESHWARDEN",
+    PRIMALIST = "WILDWALKER", RUNEMASTER = "SPIRITMAGE", VENOMANCER = "PROPHET",
+}
+
+local classColorCache = {}
+
+local function ReadColor(c)
+    if type(c) ~= "table" then return nil end
+    local r, g, b = c.r or c[1], c.g or c[2], c.b or c[3]
+    if type(r) == "number" and type(g) == "number" and type(b) == "number" then
+        return r, g, b
+    end
+end
+
+local function LookupClassColor(source, token, canonical)
+    if type(source) ~= "table" then return nil end
+    local r, g, b = ReadColor(source[token])
+    if not r and canonical ~= token then
+        r, g, b = ReadColor(source[canonical])
+    end
+    return r, g, b
+end
+
+-- Returns a { r, g, b } table (cached per token) or nil when nothing matches.
+function UF.GetClassColor(classToken)
+    if not classToken then return nil end
+    local canonical = UF.CLASS_TOKEN_ALIASES[classToken] or classToken
+    local r, g, b = LookupClassColor(_G.CUSTOM_CLASS_COLORS, classToken, canonical)
+    if not r then r, g, b = LookupClassColor(_G.RAID_CLASS_COLORS, classToken, canonical) end
+    if not r then r, g, b = ReadColor(UF.CLASS_COLOR_FALLBACK[canonical]) end
+    if not r then return nil end
+
+    local cached = classColorCache[classToken]
+    if not cached then
+        cached = {}
+        classColorCache[classToken] = cached
+    end
+    cached.r, cached.g, cached.b = r, g, b
+    return cached
+end
+
+-- Convenience: class color of a player unit, or nil for NPCs / unknown classes.
+function UF.GetUnitClassColor(unit)
+    if not unit or not UnitIsPlayer(unit) then return nil end
+    local _, classToken = UnitClass(unit)
+    return UF.GetClassColor(classToken)
+end
+
+addon.GetClassColor = UF.GetClassColor
+addon.GetUnitClassColor = UF.GetUnitClassColor
+
 -- ============================================================================
 -- CLASS PORTRAIT
 -- ============================================================================

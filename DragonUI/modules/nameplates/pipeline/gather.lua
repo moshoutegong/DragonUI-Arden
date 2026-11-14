@@ -1060,8 +1060,6 @@ function NP.gather.SyncTargetHighlight(plateData, isTargeted)
     -- Headline mode shows only the name: no target glow or arrows.
     if NP.gather.IsHeadlineActive(plateData) then
         target:Hide()
-        if target.arrowL then target.arrowL:Hide() end
-        if target.arrowR then target.arrowR:Hide() end
         return
     end
 
@@ -1075,21 +1073,30 @@ function NP.gather.SyncTargetHighlight(plateData, isTargeted)
     if isTargeted then
         target:Show()
         if cfg.showTargetHighlight ~= false and not retailBorder then
-            if target.tex then target.tex:Show() end
+            if target.tex then
+                local color = cfg.targetHighlightColor
+                target.tex:SetVertexColor(color.r, color.g, color.b)
+                target.tex:Show()
+            end
         else
             if target.tex then target.tex:Hide() end
         end
-        if cfg.showTargetArrows == true then
-            if target.arrowL then target.arrowL:Show() end
-            if target.arrowR then target.arrowR:Show() end
+        local showArrows = cfg.showTargetArrows == true
+        local useAboveArrow = cfg.targetArrowStyle == "above"
+        if showArrows and not useAboveArrow then
+            target.arrowL:Show()
+            target.arrowR:Show()
         else
-            if target.arrowL then target.arrowL:Hide() end
-            if target.arrowR then target.arrowR:Hide() end
+            target.arrowL:Hide()
+            target.arrowR:Hide()
+        end
+        if showArrows and useAboveArrow then
+            target.arrowAbove:Show()
+        else
+            target.arrowAbove:Hide()
         end
     else
         target:Hide()
-        if target.arrowL then target.arrowL:Hide() end
-        if target.arrowR then target.arrowR:Hide() end
     end
 end
 
@@ -1111,8 +1118,6 @@ NP.widgets.Register("TargetHighlight", {
         local target = plateData and plateData.minaTarget
         if not target then return end
         target:Hide()
-        if target.arrowL then target.arrowL:Hide() end
-        if target.arrowR then target.arrowR:Hide() end
     end,
 })
 

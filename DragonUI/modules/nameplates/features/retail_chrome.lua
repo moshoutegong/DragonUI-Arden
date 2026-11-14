@@ -77,7 +77,7 @@ function NP.retail_chrome.LayoutFill(bar, fraction)
 end
 
 local function RefreshFill(bar)
-    if not bar or not bar._retailFillOn then
+    if not bar then
         return
     end
     local lo, hi = bar:GetMinMaxValues()
@@ -409,13 +409,13 @@ local function LayoutChrome(plateData)
     end
     local w, h = NP.config.GetBarRefSize()
     local castH = select(1, NP.config.GetCastBarMetrics())
-    local sig = w .. ":" .. h .. ":" .. castH
+    local sig = w .. ":" .. h .. ":" .. castH .. ":" .. tostring(hp._duiCustomHealthFill)
     if plateData._retailChromeSig == sig then
         return true
     end
     plateData._retailChromeSig = sig
 
-    SetFillSliceOn(hp, true)
+    SetFillSliceOn(hp, not hp._duiCustomHealthFill)
     SetFillSliceOn(plateData.minaPo, true)
     RefreshFill(hp)
     RefreshFill(plateData.minaPo)
@@ -681,6 +681,8 @@ local function SyncChrome(plateData, isTarget)
     end
 
     if isTarget and cfg.retailSelectionBorder ~= false and cfg.showTargetHighlight ~= false then
+        local color = cfg.targetHighlightColor
+        A.SetSliceVertexColor(plateData._retailSelected, color.r, color.g, color.b, 1)
         A.ShowSlice(plateData._retailSelected)
     else
         A.HideSlice(plateData._retailSelected)

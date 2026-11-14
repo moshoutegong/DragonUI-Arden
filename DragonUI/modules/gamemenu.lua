@@ -274,6 +274,16 @@ CreateDragonUIButton = function()
     local forever = addon.ForeverUI
     if forever and forever.SkinButton then
         forever.SkinButton(dragonUIButton)
+        dragonUIButton._fuLeft:Hide()
+        dragonUIButton._fuCenter:Hide()
+        dragonUIButton._fuRight:Hide()
+
+        local background = dragonUIButton:CreateTexture(nil, "BACKGROUND")
+        background:SetPoint("TOPLEFT", dragonUIButton, "TOPLEFT", 0, 1.5)
+        background:SetPoint("BOTTOMRIGHT", dragonUIButton, "BOTTOMRIGHT", 0, -1.5)
+        background:SetTexture(addon._dir .. "Micromenu\\gamemenu_btn.tga")
+        background:SetVertexColor(0.40, 0.65, 1.00)
+
         addon.GameMenuDragons.Attach(dragonUIButton)
     end
 

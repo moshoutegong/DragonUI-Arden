@@ -797,9 +797,9 @@ local function BuildHealthSubTab(scroll)
     local function IsHealthTextPositionLocked()
         return IsHealthTextOff() or IsNameInsideBar()
     end
-    local function IsHealthTextFontSizeUnused()
-        return ModernOwnsText() or IsHealthTextPositionLocked()
-            or (GetNP().healthTextPosition or "afterName") == "afterName"
+    local function IsBarHealthTextUnused()
+        return IsHealthTextOff()
+            or (not IsNameInsideBar() and (GetNP().healthTextPosition or "afterName") == "afterName")
     end
     local function HasNoFriendlyClassBars()
         local np = GetNP()
@@ -963,21 +963,55 @@ local function BuildHealthSubTab(scroll)
         disabled = IsHealthTextPositionLocked,
         callback = RefreshDependents,
     }), IsHealthTextPositionLocked)
-    Depends(C:AddSlider(textRow, {
+    local textAdjustRow = C:AddRow(healthTextSection)
+    Depends(C:AddSlider(textAdjustRow, {
         label = LO["Font Size"],
-        desc = LO["Font size of the health text inside the bar (1-10). After the name, or in the Modern style, it matches the name."],
         dbPath = DB .. ".healthNumberFontSize",
         min = 1, max = 10, step = 1,
         width = 200,
-        disabled = IsHealthTextFontSizeUnused,
+        disabled = IsBarHealthTextUnused,
         callback = RefreshNameplates,
-    }), IsHealthTextFontSizeUnused)
+    }), IsBarHealthTextUnused)
+
+    Depends(C:AddSlider(textAdjustRow, {
+        label = LO["Offset X"],
+        dbPath = DB .. ".healthTextOffsetX",
+        min = -40, max = 40, step = 1,
+        width = 200,
+        disabled = IsBarHealthTextUnused,
+        callback = RefreshNameplates,
+    }), IsBarHealthTextUnused)
+    Depends(C:AddSlider(textAdjustRow, {
+        label = LO["Offset Y"],
+        dbPath = DB .. ".healthTextOffsetY",
+        min = -30, max = 30, step = 1,
+        width = 200,
+        disabled = IsBarHealthTextUnused,
+        callback = RefreshNameplates,
+    }), IsBarHealthTextUnused)
 
     if IsNameInsideBar() then
         C:AddDescription(healthTextSection, LO["The name is inside the health bar, so the health text sits at the bar's right end, after the name."])
     end
 
     local barSection = C:AddSection(scroll, LO["Health Bar"])
+    local media = LibStub("LibSharedMedia-3.0", true)
+    local textureChoices = { ["DragonUI默认"] = LO["Default Nameplate Texture"] }
+    for _, name in ipairs(media and media:List("statusbar") or {}) do
+        if name ~= "DragonUI默认" then textureChoices[name] = name end
+    end
+    C:AddDropdown(barSection, {
+        label = LO["Health Bar Texture"],
+        desc = LO["Choose a shared-media texture for the nameplate health bar fill."],
+        dbPath = DB .. ".healthBarTexture",
+        getFunc = function()
+            local name = GetNP().healthBarTexture
+            return textureChoices[name] and name or "DragonUI默认"
+        end,
+        values = textureChoices,
+        width = 220,
+        callback = RefreshNameplates,
+    })
 
     if RetailChromeOwnsBackground() then
         C:AddDescription(barSection, LO["The Modern style draws its own bar background."])
@@ -1207,15 +1241,32 @@ local function BuildTargetSubTab(scroll)
 
     C:AddToggle(targetThreat, {
         label = LO["Show Target Highlight"],
-        desc = LO["White border glow on the current target nameplate."],
+        desc = LO["Border glow on the current target nameplate."],
         dbPath = DB .. ".showTargetHighlight",
+        callback = RefreshNameplates,
+    })
+
+    C:AddColorPicker(targetThreat, {
+        label = LO["Target Highlight Color"],
+        dbPath = DB .. ".targetHighlightColor",
         callback = RefreshNameplates,
     })
 
     C:AddToggle(targetThreat, {
         label = LO["Show Target Arrows"],
-        desc = LO["Left/right arrows on the targeted nameplate."],
+        desc = LO["Show an arrow indicator on the targeted nameplate."],
         dbPath = DB .. ".showTargetArrows",
+        callback = RefreshNameplates,
+    })
+
+    C:AddDropdown(targetThreat, {
+        label = LO["Target Arrow Style"],
+        dbPath = DB .. ".targetArrowStyle",
+        values = {
+            sides = LO["Left and Right Arrows"],
+            above = LO["Red Down Arrow"],
+        },
+        width = 220,
         callback = RefreshNameplates,
     })
 

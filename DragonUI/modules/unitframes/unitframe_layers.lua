@@ -431,6 +431,7 @@ local function addPlayerExtras(st, frame, native, mana)
 end
 
 local function takeOverUpdates(st)
+    if st.frame.DragonUI_IndependentToT then return end
     local native, mana = st.healthBar, st.manaBar
     if not st.savedUpdates then
         st.savedUpdates = true
@@ -453,7 +454,7 @@ local function fallbackUnitFor(name)
 end
 
 local function attach(frame)
-    if not frame then return nil end
+    if not frame or frame.DragonUI_ToTReplaced then return nil end
     local known = layered[frame]
     if known then return known end
     local name = frame.GetName and frame:GetName()
@@ -466,7 +467,7 @@ local function attach(frame)
     local mana = frame.manabar or _G[name .. "ManaBar"]
 
     local st = { frame = frame, name = name, healthBar = native, manaBar = mana, fallbackUnit = fallbackUnit }
-    local small = (frame == _G.TargetFrameToT) or (frame == _G.FocusFrameToT)
+    local small = frame.DragonUI_IndependentToT or frame == _G.TargetFrameToT or frame == _G.FocusFrameToT
     local shownBar = frame.DragonUI_HealthBar or native
 
     buildElements(st, frame, native, small)
@@ -482,11 +483,13 @@ local function attach(frame)
         st.manaCost:Hide()
     end
 
-    frame:RegisterEvent("UNIT_MAXHEALTH")
-    if addon.RegisterUnitEventSafe then
-        addon.RegisterUnitEventSafe(frame, "UNIT_AURA", unit)
-    else
-        frame:RegisterEvent("UNIT_AURA")
+    if not frame.DragonUI_IndependentToT then
+        frame:RegisterEvent("UNIT_MAXHEALTH")
+        if addon.RegisterUnitEventSafe then
+            addon.RegisterUnitEventSafe(frame, "UNIT_AURA", unit)
+        else
+            frame:RegisterEvent("UNIT_AURA")
+        end
     end
 
     kit.ResolveLibraries()
@@ -515,8 +518,13 @@ local function attach(frame)
     return st
 end
 
+function addon.RefreshIndependentToTLayers(frame)
+    local st = layered[frame]
+    if st and not st.restored and isLive() then paint(st) end
+end
+
 local EAGER_FRAMES = {
-    "PlayerFrame", "TargetFrame", "FocusFrame", "PetFrame", "TargetFrameToT", "FocusFrameToT",
+    "PlayerFrame", "TargetFrame", "FocusFrame", "PetFrame", "DragonUIToTFrame", "FocusFrameToT",
 }
 for i = 1, 4 do
     EAGER_FRAMES[#EAGER_FRAMES + 1] = "PartyMemberFrame" .. i

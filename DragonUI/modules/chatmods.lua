@@ -2708,50 +2708,6 @@ local function ApplyStickyChannels()
 end
 
 -- ============================================================================
--- PLAYER RIGHT-CLICK MENU (Add Friend / Guild Invite)
--- ============================================================================
-
-local PLAYER_MENU_TYPES = {
-    ["SELF"] = true,
-    ["PLAYER"] = true,
-    ["RAID_PLAYER"] = true,
-    ["PARTY"] = true,
-    ["FRIEND"] = true,
-}
-
-local function ApplyPlayerRightClickMenu()
-    if ChatModsModule.hooks.playerMenu then return end
-
-    hooksecurefunc("UnitPopup_ShowMenu", function(dropDown, which, unit, name, userData)
-        if not ChatModsModule.applied then return end
-
-        if not which or not PLAYER_MENU_TYPES[which] then return end
-
-        if not name then return end
-
-        local cleanName = name:gsub("%-.+$", "")
-
-        local info = UIDropDownMenu_CreateInfo()
-        info.text = "添加好友"
-        info.notCheckable = true
-        info.func = function()
-            AddFriend(cleanName)
-        end
-        UIDropDownMenu_AddButton(info)
-
-        info = UIDropDownMenu_CreateInfo()
-        info.text = "公会邀请"
-        info.notCheckable = true
-        info.func = function()
-            GuildInvite(cleanName)
-        end
-        UIDropDownMenu_AddButton(info)
-    end)
-
-    ChatModsModule.hooks.playerMenu = true
-end
-
--- ============================================================================
 -- CLASS COLORED NAMES
 -- ============================================================================
 
@@ -2800,7 +2756,6 @@ local function ApplyChatModsSystem()
     -- After the login chat settings have loaded, so they can't overwrite it.
     addon:After(1, ApplyClassColorNames)
 
-    ApplyPlayerRightClickMenu()
 
     -- AFK/DND dedup filters
     if not ChatModsModule.hooks.afkDndFilter then

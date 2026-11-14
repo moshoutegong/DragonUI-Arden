@@ -1,4 +1,5 @@
 local addon = select(2, ...)
+local L = addon.L
 
 local InspectorModule = { applied = false }
 local ComparePanel, cpFrame, cpScroll, cpContent
@@ -6,8 +7,8 @@ local CP
 
 if addon.RegisterModule then
     addon:RegisterModule("inspector", InspectorModule,
-        "Talent Inspector",
-        "Shows the CoA talent tree when inspecting a player",
+        L["Talent Inspector"],
+        L["Shows the CoA talent tree when inspecting a player"],
         {
             lifecycle = {
                 apply   = "ApplyInspectorSystem",

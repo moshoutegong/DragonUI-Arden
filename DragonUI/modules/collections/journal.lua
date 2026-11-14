@@ -136,7 +136,7 @@ local function updateInfo()
         uncollectedHint:Hide()
         showCreature(nil)
         actionButton:Disable()
-        actionButton:SetText(isMount() and MOUNT or SUMMON)
+        actionButton:SetText(isMount() and addon.L["Summon Mount"] or SUMMON)
         return
     end
 
@@ -165,13 +165,13 @@ local function updateInfo()
 
     if not entry.index then
         actionButton:Disable()
-        actionButton:SetText(isMount() and MOUNT or SUMMON)
+        actionButton:SetText(isMount() and addon.L["Summon Mount"] or SUMMON)
     elseif entry.active then
         actionButton:Enable()
-        actionButton:SetText(isMount() and BINDING_NAME_DISMOUNT or PET_DISMISS)
+        actionButton:SetText(isMount() and addon.L["Dismiss Mount"] or PET_DISMISS)
     else
         actionButton:Enable()
-        actionButton:SetText(isMount() and MOUNT or SUMMON)
+        actionButton:SetText(isMount() and addon.L["Summon Mount"] or SUMMON)
     end
 end
 
@@ -524,9 +524,9 @@ CO.RefreshJournal = refresh
 function rowMenuEntries(entry)
     local summon
     if entry.active then
-        summon = isMount() and BINDING_NAME_DISMOUNT or PET_DISMISS
+        summon = isMount() and addon.L["Dismiss Mount"] or PET_DISMISS
     else
-        summon = isMount() and MOUNT or SUMMON
+        summon = isMount() and addon.L["Summon Mount"] or SUMMON
     end
     local fav = CO.IsFavorite(kind(), entry.creatureID)
     return {

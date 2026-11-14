@@ -69,7 +69,7 @@ local function ApplyAlpha(entry, alpha)
     alpha = Clamp01(alpha)
     for _, frame in ipairs(entry.frames) do
         if frame then
-            frame:SetAlpha(alpha)
+            frame:SetAlpha(frame.DragonUI_SuppressAlpha and 0 or alpha)
         end
     end
 end

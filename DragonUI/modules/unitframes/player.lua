@@ -1340,7 +1340,7 @@ local function UpdatePlayerNameColor()
     local config = GetPlayerConfig()
     if (config.classColorName or (addon.BBFGet and addon.BBFGet("names", "class_color"))) then
         local _, class = UnitClass("player")
-        local color = class and RAID_CLASS_COLORS[class]
+        local color = UF.GetClassColor(class)
         if color then
             PlayerName:SetTextColor(color.r, color.g, color.b)
         end
@@ -1852,7 +1852,10 @@ local function ApplyPlayerGlowArt()
     local dragonFrame = _G["DragonUIUnitframeFrame"]
     if not dragonFrame or not dragonFrame.DragonUIStatusGlow or not dragonFrame.EliteStatusGlow then return end
     UpdatePlayerSwords(playerCombatIconShown and not PlayerArt.LegacyFat() and not IsEliteModeActive())
-    if IsInVehicle() then return end
+    if IsInVehicle() then
+        if addon.RefreshStealthGlow then addon.RefreshStealthGlow() end
+        return
+    end
     local skin = UF.GetFrameSkin()
     local art = dragonFrame.PlayerFrameBackground
     local fat = PlayerArt.LegacyFat()
@@ -1888,6 +1891,18 @@ local function ApplyPlayerGlowArt()
             texture:SetTexCoord(unpack(ELITE_GLOW_COORDINATES.texCoord))
         end
     end
+    if addon.RefreshStealthGlow then addon.RefreshStealthGlow() end
+end
+
+function addon.GetPlayerStatusGlowArt()
+    local frame = _G.DragonUIUnitframeFrame
+    if not frame or not IsPlayerModuleEnabled() then return end
+    if IsInVehicle() then
+        return frame.VehicleStatusGlow, frame.VehicleStatusTexture
+    elseif IsEliteModeActive() then
+        return frame.EliteStatusGlow, frame.EliteStatusTexture
+    end
+    return frame.DragonUIStatusGlow, frame.DragonUIStatusTexture
 end
 
 -- The Zzz rises from the dragon's snout; a crown, guide flag or looter icon in that row sends it to the plain spot.

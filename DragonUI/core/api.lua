@@ -805,7 +805,7 @@ function addon.InstallFramePositionProtection(frame, blizzardFrame)
     -- 编辑框自身的 SetPoint 钩子
     hooksecurefunc(frame, "SetPoint", function(self, ...)
         if not self._dragonui_locked then return end
-        if self._dragonui_applying then return end
+        if self._dragonui_applying or (addon.EditorMode and addon.EditorMode:IsActive()) then return end
         local saved = self._dragonui_savedPos
         if not saved then return end
 

@@ -1751,7 +1751,8 @@ function UF.TargetStyle.Create(opts)
         -- Skip native spellbar: castbar.lua already hides it, fading it here undid that.
         local extraFrames, hoverFrames = {}, { BlizzFrame }
         if configKey == "target" then
-            if _G.TargetFrameToT then table.insert(extraFrames, _G.TargetFrameToT); table.insert(hoverFrames, _G.TargetFrameToT) end
+            local tot = addon.TargetOfTarget and addon.TargetOfTarget.frame or _G.TargetFrameToT
+            if tot then table.insert(extraFrames, tot); table.insert(hoverFrames, tot) end
         elseif configKey == "focus" then
             if _G.FocusFrameToT then table.insert(extraFrames, _G.FocusFrameToT); table.insert(hoverFrames, _G.FocusFrameToT) end
         end

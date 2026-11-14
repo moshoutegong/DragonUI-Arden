@@ -241,7 +241,8 @@ local function HasCompanionUnit(unitType)
             return false
         end
 
-        return TargetFrameToT and TargetFrameToT.IsShown and TargetFrameToT:IsShown() and true or false
+        local tot = addon.TargetOfTarget and addon.TargetOfTarget.frame or TargetFrameToT
+        return tot and tot:IsShown() and not tot.DragonUI_SuppressAlpha or false
     elseif unitType == "focus" then
         if not UnitExists("focus") then
             return false

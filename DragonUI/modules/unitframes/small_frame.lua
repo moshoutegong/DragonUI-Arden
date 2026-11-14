@@ -41,6 +41,7 @@ local PORTRAIT_BARS = {
 --   defaultY            : number  default Y offset for positioning
 --   cvar                : string? "showTargetOfTarget" for ToT, nil for FoT
 --   hideWhenParentIsPlayer : bool? Hide companion frame when parent unit is the player
+--   secureVisibility : bool? Visibility is managed by a secure state driver.
 --   extraInit           : func?   function(Module, config) — called at end of InitializeFrame
 -- ============================================================================
 
@@ -445,6 +446,7 @@ function UF.SmallFrame.Create(opts)
 
     -- FocusFrame_SetSmallSize re-anchors FocusFrameToT by BOTTOMRIGHT: beside our TOPLEFT it would stretch it.
     local function HookOutsideAnchors()
+        if opts.secureVisibility then return end
         if frames.main.DragonUI_AttachHooked then return end
         frames.main.DragonUI_AttachHooked = true
         hooksecurefunc(frames.main, "SetPoint", function(self)
@@ -622,8 +624,8 @@ function UF.SmallFrame.Create(opts)
             opts.extraInit(Module, config)
         end
 
-        -- Show the frame
-        if not InCombatLockdown() then
+        -- An independent frame is shown by its secure visibility driver.
+        if not opts.secureVisibility and not InCombatLockdown() then
             frames.main:Show()
         end
 
@@ -636,6 +638,7 @@ function UF.SmallFrame.Create(opts)
     -- ========================================================================
 
     ReconcileVisibility = function()
+        if opts.secureVisibility then return end
         if InCombatLockdown() then
             Module.pendingVisibilityRefresh = true
             if addon and addon.CombatQueue then
@@ -681,6 +684,7 @@ function UF.SmallFrame.Create(opts)
     end
 
     RequestVisibilityRefresh = function()
+        if opts.secureVisibility then return end
         Module.pendingVisibilityRefresh = true
 
         if InCombatLockdown() then
@@ -814,7 +818,7 @@ function UF.SmallFrame.Create(opts)
     -- ========================================================================
 
     function Module:ApplyWidgetPosition()
-        if not Module.anchorFrame then return end
+        if not Module.anchorFrame or Module.anchorFrame.DragonUI_Dragging then return end
 
         if InCombatLockdown() then
             if not pendingWidgetPositionUpdate and addon and addon.CombatQueue then
@@ -869,15 +873,12 @@ function UF.SmallFrame.Create(opts)
         addon.db.profile.widgets = addon.db.profile.widgets or {}
         addon.db.profile.widgets[opts.configKey] = addon.db.profile.widgets[opts.configKey] or {}
 
-        local cx, cy = Module.anchorFrame:GetCenter()
-        local ux, uy = UIParent:GetCenter()
-        if not (cx and cy and ux and uy) then
-            return false
-        end
+        local x, y = addon.GetAnchorOffset(Module.anchorFrame, "CENTER", "CENTER")
+        if not x then return false end
 
         addon.db.profile.widgets[opts.configKey].anchor = "CENTER"
-        addon.db.profile.widgets[opts.configKey].posX = math.floor((cx - ux) + 0.5)
-        addon.db.profile.widgets[opts.configKey].posY = math.floor((cy - uy) + 0.5)
+        addon.db.profile.widgets[opts.configKey].posX = math.floor(x + 0.5)
+        addon.db.profile.widgets[opts.configKey].posY = math.floor(y + 0.5)
         return true
     end
 
@@ -911,6 +912,7 @@ function UF.SmallFrame.Create(opts)
 
     local function RefreshFrame()
         if not IsEnabled() then
+            if opts.secureVisibility then return end
             if frames.main and not InCombatLockdown() then
                 frames.main:Hide()
             elseif frames.main then
@@ -988,8 +990,13 @@ function UF.SmallFrame.Create(opts)
     -- Temporary position until ADDON_LOADED restores from DB
     Module:ApplyWidgetPosition()
 
+    Module.anchorFrame:HookScript("OnDragStart", function(self)
+        self.DragonUI_Dragging = true
+    end)
+
     -- Track if the user actually dragged this frame in editor mode
     Module.anchorFrame:HookScript("OnDragStop", function(self)
+        self.DragonUI_Dragging = nil
         self.DragonUI_WasDragged = true
 
         -- Detach and persist immediately on drag stop so ToT does not get
@@ -1018,22 +1025,22 @@ function UF.SmallFrame.Create(opts)
                 local config = GetConfig()
                 if not config or not config.override then
                     -- Ensure we have a valid center before trying to sync overlay.
-                    if frames.main and not InCombatLockdown() then
+                    if not opts.secureVisibility and frames.main and not InCombatLockdown() then
                         frames.main:Show()
                     end
 
-                    -- Attached mode: prefer true anchoring so the editor overlay
-                    -- follows target/focus movement in real time. If that creates
-                    -- a dependency cycle (known edge case), fallback to absolute center.
+                    -- The mover stays independent of the secure unit frame.
                     if frames.main then
-                        Module.anchorFrame:ClearAllPoints()
-                        local linked = pcall(Module.anchorFrame.SetPoint, Module.anchorFrame, "CENTER", frames.main, "CENTER", 0, 0)
-                        if not linked then
-                            local fx, fy = frames.main:GetCenter()
-                            local ux, uy = UIParent:GetCenter()
-                            if fx and fy and ux and uy then
-                                Module.anchorFrame:SetPoint("CENTER", UIParent, "CENTER", fx - ux, fy - uy)
-                            end
+                        local fx, fy = frames.main:GetCenter()
+                        local ux, uy = UIParent:GetCenter()
+                        if fx and fy and ux and uy then
+                            local frameScale = frames.main:GetEffectiveScale()
+                            local parentScale = UIParent:GetEffectiveScale()
+                            local moverScale = Module.anchorFrame:GetEffectiveScale()
+                            Module.anchorFrame:ClearAllPoints()
+                            Module.anchorFrame:SetPoint("CENTER", UIParent, "CENTER",
+                                (fx * frameScale - ux * parentScale) / moverScale,
+                                (fy * frameScale - uy * parentScale) / moverScale)
                         end
                     end
                 else
@@ -1041,14 +1048,14 @@ function UF.SmallFrame.Create(opts)
                     Module:UpdateWidgets()
                 end
             end
-            -- Show the Blizzard frame in editor mode even without a target
-            if frames.main and not InCombatLockdown() then
+            -- Show the native preview; secure frames keep their driver state.
+            if not opts.secureVisibility and frames.main and not InCombatLockdown() then
                 frames.main:Show()
             end
         end,
         hideTest = function()
-            -- Restore normal visibility when leaving editor
-            if frames.main and not InCombatLockdown() then
+            -- Restore normal visibility for the native preview.
+            if not opts.secureVisibility and frames.main and not InCombatLockdown() then
                 if not ShouldShow() then
                     frames.main:Hide()
                 end
@@ -1064,6 +1071,7 @@ function UF.SmallFrame.Create(opts)
             Module:UpdateWidgets()
         end,
         onHide = function()
+            Module.anchorFrame.DragonUI_Dragging = nil
             -- Detach if the user dragged OR adjusted via pixel-perfect controls.
             if Module.anchorFrame.DragonUI_WasDragged or Module.anchorFrame.DragonUI_WasAdjustedByEditor then
                 local config = GetConfig()
