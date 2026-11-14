@@ -1,0 +1,11 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+    <!-- Raid debuff boss spell filter data (ported from ElvUI) -->
+    <Script file="raid_debuffs_data.lua"/>
+
+    <!-- Module shell (defines addon.RaidFrames, res tracking, editor) -->
+    <Script file="raidframes.lua"/>
+
+    <!-- Custom raid frame implementation (SecureGroupHeaderTemplate) -->
+    <Include file="unitbutton.xml"/>
+    <Script file="frames.lua"/>
+</Ui>

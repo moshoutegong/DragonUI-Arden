@@ -1,0 +1,17 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+    <!-- DragonUI custom raid frame unit button template.
+         Created by SecureGroupHeaderTemplate headers (see frames.lua).
+         All visual elements are built in Lua from DragonUIRaidButton_OnLoad
+         so they follow the DragonUI database settings. -->
+    <Button name="DragonUIRaidButtonTemplate" inherits="SecureUnitButtonTemplate" hidden="true" virtual="true">
+        <Attributes>
+            <Attribute name="toggleForVehicle" type="boolean" value="true"/>
+            <Attribute name="checkselfcast" type="boolean" value="false"/>
+        </Attributes>
+        <Scripts>
+            <OnLoad>
+                DragonUIRaidButton_OnLoad(self)
+            </OnLoad>
+        </Scripts>
+    </Button>
+</Ui>

@@ -1,0 +1,11 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
+
+    <!-- Frame Enhancements (ported from BetterBlizzFrames). Must load after
+         unitframes (UF.GetClassColor) and castbar.lua (CastbarModule). -->
+    <Script file="core.lua"/>
+    <Script file="castbars.lua"/>
+    <Script file="indicators.lua"/>
+    <Script file="appearance.lua"/>
+    <Script file="auras.lua"/>
+
+</Ui>
