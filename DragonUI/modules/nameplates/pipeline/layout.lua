@@ -1023,12 +1023,13 @@ function NP.layout.EnsureMinaStack(plateData)
     plateData.minaTarget.tex = targetTex
 
     plateData.minaTarget.arrowL = plateData.minaTarget:CreateTexture(nil, "ARTWORK")
-    plateData.minaTarget.arrowL:SetTexture(C.MINA_TEX .. "arrowleft")
+    plateData.minaTarget.arrowL:SetTexture(C.MINA_TEX .. "target-chevron")
     plateData.minaTarget.arrowL:SetSize(20, 20)
     plateData.minaTarget.arrowL:SetPoint("RIGHT", plateData.minaTarget, "LEFT", 4, 0)
 
     plateData.minaTarget.arrowR = plateData.minaTarget:CreateTexture(nil, "ARTWORK")
-    plateData.minaTarget.arrowR:SetTexture(C.MINA_TEX .. "arrowright")
+    plateData.minaTarget.arrowR:SetTexture(C.MINA_TEX .. "target-chevron")
+    plateData.minaTarget.arrowR:SetTexCoord(1, 0, 0, 1)
     plateData.minaTarget.arrowR:SetSize(20, 20)
     plateData.minaTarget.arrowR:SetPoint("LEFT", plateData.minaTarget, "RIGHT", -4, 0)
     local arrowAbove = plateData.minaTarget:CreateTexture(nil, "OVERLAY")
