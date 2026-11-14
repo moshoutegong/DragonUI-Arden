@@ -1,0 +1,35 @@
+name: Import Arden plugin files
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/import-arden.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import the verified release archive
+        env:
+          ARCHIVE_URL: https://github.com/moshoutegong/DragonUI-Arden/releases/download/v4.1.1-Arden/DragonUI-Arden-4.1.1.zip
+          ARCHIVE_SHA: 00fb16ccf787f542ec14470ca51522baf30b483384026ff7bf0308d6d605e69c
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/arden.zip"
+          extracted="$RUNNER_TEMP/arden"
+          curl --fail --location --retry 3 --output "$archive" "$ARCHIVE_URL"
+          printf '%s  %s\n' "$ARCHIVE_SHA" "$archive" | sha256sum --check
+          unzip -q "$archive" 'DragonUI/*' 'DragonUI_Options/*' -d "$extracted"
+          test -f "$extracted/DragonUI/DragonUI.toc"
+          test -f "$extracted/DragonUI_Options/DragonUI_Options.toc"
+          test ! -e DragonUI
+          test ! -e DragonUI_Options
+          mv "$extracted/DragonUI" "$extracted/DragonUI_Options" .
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/import-arden.yml
+          git add -- DragonUI DragonUI_Options
+          git commit -m '导入 DragonUI-Arden 插件源码'
+          git push origin HEAD:main
