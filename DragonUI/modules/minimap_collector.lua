@@ -40,6 +40,7 @@ local STYLE_CLASSIC   = "classic"
 local DEFAULT_ANGLE   = 315
 local ANIM_DURATION   = 0.14
 local ANIM_SHRINK     = 0.35
+local AUTO_CLOSE_DELAY = 0.45
 local HIGHLIGHT_TEX   = "Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight"
 local WHITE_TEX       = "Interface\\Buttons\\WHITE8X8"
 local BORDER_TEX      = "Interface\\AddOns\\DragonUI\\Textures\\Minimap\\border_buttons.tga"
@@ -665,6 +666,26 @@ local function CreateCollectorFrame()
     c:SetBackdropBorderColor(0.20, 0.20, 0.24, 1)
     c:Hide()
     c.isOpen = false
+
+    -- Keep the idle timer separate from the collector's animation OnUpdate.
+    local idleWatcher = CreateFrame("Frame", nil, c)
+    local outsideTime = 0
+    c:HookScript("OnHide", function() outsideTime = 0 end)
+    idleWatcher:SetScript("OnUpdate", function(_, elapsed)
+        if not c.isOpen then return end
+        local toggle = GetSettingsBtn()
+        if c:IsMouseOver() or (toggle and toggle:IsVisible() and toggle:IsMouseOver()) then
+            outsideTime = 0
+            return
+        end
+        outsideTime = outsideTime + elapsed
+        if outsideTime >= AUTO_CLOSE_DELAY then
+            outsideTime = 0
+            c.isOpen = false
+            c.DragonUI_PendingTransition = "close"
+            RefreshCollector()
+        end
+    end)
     frames.iconCollector = c
     return c
 end

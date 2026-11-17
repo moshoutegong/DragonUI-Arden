@@ -647,6 +647,7 @@ function EditorMode:Show()
     CreateManager()
     SetupErrorMessagesMover()
     EnsureStaticPopupEditorHook()
+    addon.UnlockAllEditableFramePositions()
     editorActive = true
     ApplyGridVisibility()
     manager:Show()
@@ -680,12 +681,20 @@ function EditorMode:Hide()
         addon.PositionPresets:CloseDialogs()
     end
 
+    for _, frameData in pairs(addon.EditableFrames) do
+        local frame = frameData.frame
+        if frame and frame.DragonUI_Dragging then
+            local dragStop = frame:GetScript("OnDragStop")
+            if dragStop then dragStop(frame) end
+        end
+    end
     editorActive = false
     ApplyGridVisibility()
     if manager then manager:Hide() end
     if clickWatcher then clickWatcher:Hide() end
 
     addon:HideAllEditableFrames(true) -- true = refresh and save positions
+    addon.LockAllEditableFramePositions()
     RestoreEditorStaticPopups()
 end
 

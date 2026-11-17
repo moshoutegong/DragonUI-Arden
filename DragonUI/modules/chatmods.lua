@@ -74,68 +74,32 @@
         frame:EnableMouse(enabled)
     end
 
-    local function SetButtonVisible(button, visible)
-        if not button then return end
-
-        if not button:IsShown() then
-            button:Show()
-        end
-
-        local alpha = visible and 1 or 0
-        if IsAlphaChanged(button:GetAlpha(), alpha) then
-            button:SetAlpha(alpha)
-        end
-        SetMouseIfChanged(button, visible)
-    end
-
     local function SetButtonAlpha(button, alpha)
-        if not button then return end
-
-        if not button:IsShown() then
-            button:Show()
-        end
+        if not button or not button:IsShown() then return end
+        if UIFrameFadeRemoveFrame then UIFrameFadeRemoveFrame(button) end
         if IsAlphaChanged(button:GetAlpha(), alpha) then
             button:SetAlpha(alpha)
         end
         SetMouseIfChanged(button, alpha >= 0.95)
     end
 
-    local function SetChatHoverButtonsVisible(i, visible, entry)
-        if ButtonsAlwaysShown() then visible = true end
-        local bf = (entry and entry.bf) or _G["ChatFrame" .. i .. "ButtonFrame"]
-        if bf then
-            if not bf:IsShown() then
-                bf:Show()
-            end
-            local alpha = visible and 1 or 0
-            if IsAlphaChanged(bf:GetAlpha(), alpha) then
-                bf:SetAlpha(alpha)
-            end
-            SetMouseIfChanged(bf, visible)
-        end
+    local function GetOverflowButton()
+        return (_G.GENERAL_CHAT_DOCK and _G.GENERAL_CHAT_DOCK.overflowButton)
+            or _G.GeneralDockManagerOverflowButton
+    end
 
-        -- BF-child buttons: parent frame alpha handles fade, just toggle mouse
-        local upBtn = (entry and entry.upBtn) or _G["ChatFrame" .. i .. "ButtonFrameUpButton"]
-        local downBtn = (entry and entry.downBtn) or _G["ChatFrame" .. i .. "ButtonFrameDownButton"]
-        local bottomBtn = (entry and entry.bottomBtn) or _G["ChatFrame" .. i .. "ButtonFrameBottomButton"]
-        if upBtn then
-            if not upBtn:IsShown() then upBtn:Show() end
-            SetMouseIfChanged(upBtn, visible)
+    local function GetSelectedChatIndex()
+        local selected = _G.SELECTED_CHAT_FRAME
+        if _G.FCFDock_GetSelectedWindow and _G.GENERAL_CHAT_DOCK and (not selected or selected.isDocked) then
+            selected = _G.FCFDock_GetSelectedWindow(_G.GENERAL_CHAT_DOCK) or selected
         end
-        if downBtn then
-            if not downBtn:IsShown() then downBtn:Show() end
-            SetMouseIfChanged(downBtn, visible)
-        end
-        if bottomBtn then
-            if not bottomBtn:IsShown() then bottomBtn:Show() end
-            SetMouseIfChanged(bottomBtn, visible)
-        end
+        return selected and selected:GetID() or 1
+    end
 
-        -- Non-child buttons need independent control
-        if i == 1 then
-            SetButtonVisible((entry and entry.menuBtn) or _G.ChatFrameMenuButton, visible)
-            SetButtonVisible((entry and entry.friendsBtn) or _G.FriendsMicroButton, visible)
-        end
+    local function SetDockButtonsAlpha(alpha)
+        SetButtonAlpha(_G.ChatFrameMenuButton, alpha)
+        SetButtonAlpha(_G.FriendsMicroButton, alpha)
+        SetButtonAlpha(GetOverflowButton(), alpha)
     end
 
 local function StripButtonFrameBackground(buttonFrame)
@@ -159,31 +123,11 @@ local function StripButtonFrameBackground(buttonFrame)
 end
 
 local function SetChatHoverButtonsAlpha(i, alpha, entry)
-        if ButtonsAlwaysShown() then alpha = 1 end
-        local bf = (entry and entry.bf) or _G["ChatFrame" .. i .. "ButtonFrame"]
-        if bf then
-            if not bf:IsShown() then
-                bf:Show()
-            end
-            if IsAlphaChanged(bf:GetAlpha(), alpha) then
-                bf:SetAlpha(alpha)
-            end
-            SetMouseIfChanged(bf, alpha >= 0.95)
-        end
-
-    -- BF-child buttons: parent frame alpha handles fade, just toggle mouse
-    local upBtn = (entry and entry.upBtn) or _G["ChatFrame" .. i .. "ButtonFrameUpButton"]
-    local downBtn = (entry and entry.downBtn) or _G["ChatFrame" .. i .. "ButtonFrameDownButton"]
-    local bottomBtn = (entry and entry.bottomBtn) or _G["ChatFrame" .. i .. "ButtonFrameBottomButton"]
-    SetMouseIfChanged(upBtn, alpha >= 0.95)
-    SetMouseIfChanged(downBtn, alpha >= 0.95)
-    SetMouseIfChanged(bottomBtn, alpha >= 0.95)
-
-    -- Non-child buttons need independent alpha control
-    if i == 1 then
-        SetButtonAlpha((entry and entry.menuBtn) or _G.ChatFrameMenuButton, alpha)
-        SetButtonAlpha((entry and entry.friendsBtn) or _G.FriendsMicroButton, alpha)
-    end
+    local bf = (entry and entry.bf) or _G["ChatFrame" .. i .. "ButtonFrame"]
+    SetButtonAlpha(bf, alpha)
+    SetButtonAlpha((entry and entry.upBtn) or _G["ChatFrame" .. i .. "ButtonFrameUpButton"], alpha)
+    SetButtonAlpha((entry and entry.downBtn) or _G["ChatFrame" .. i .. "ButtonFrameDownButton"], alpha)
+    SetButtonAlpha((entry and entry.bottomBtn) or _G["ChatFrame" .. i .. "ButtonFrameBottomButton"], alpha)
 end
 
     local function GetTabIdleAlpha(config)
@@ -198,6 +142,24 @@ end
         return (config and config.editboxIdleAlpha ~= nil) and config.editboxIdleAlpha or 0
     end
 
+    local function IsChatRegionHovered(frame)
+        return frame and frame:IsVisible() and frame:IsMouseOver()
+    end
+
+    local function IsVisibleButtonHovered(button)
+        return button and button:GetAlpha() >= 0.95 and IsChatRegionHovered(button)
+    end
+
+    local function IsChatButtonsHovered(cf, tab, bf, eb, selected)
+        local overflow = selected and GetOverflowButton()
+        local dockHovered = selected and (IsVisibleButtonHovered(_G.ChatFrameMenuButton)
+            or IsVisibleButtonHovered(_G.FriendsMicroButton) or IsVisibleButtonHovered(overflow)
+            or (overflow and overflow.list and overflow.list:IsVisible()))
+        return dockHovered or IsChatRegionHovered(cf) or IsChatRegionHovered(tab)
+            or (eb and (IsChatRegionHovered(eb) or eb:HasFocus()))
+            or IsVisibleButtonHovered(bf)
+    end
+
     local StartChatButtonsHoverUpdater
     local StopChatButtonsHoverUpdater
 
@@ -208,6 +170,8 @@ end
         local tabIdleAlpha = GetTabIdleAlpha(cfg)
         local styleIdleAlpha = GetStyleIdleAlpha(cfg)
         local ebIdleAlpha = GetEditboxIdleAlpha(cfg)
+        local selectedIndex = GetSelectedChatIndex()
+        local alwaysShow = ButtonsAlwaysShown()
 
         for i = 1, CHAT_FRAME_LIMIT do
             local cf = _G["ChatFrame" .. i]
@@ -215,10 +179,7 @@ end
             local bf = _G["ChatFrame" .. i .. "ButtonFrame"]
             local eb = _G["ChatFrame" .. i .. "EditBox"]
 
-            local hovered = (tab and tab:IsMouseOver())
-                or (cf and cf:IsMouseOver())
-                or (bf and bf:IsMouseOver())
-                or (eb and eb:IsMouseOver())
+            local hovered = IsChatButtonsHovered(cf, tab, bf, eb, i == selectedIndex)
 
             local tabAlpha = hovered and 1 or tabIdleAlpha
             if tab then
@@ -228,7 +189,9 @@ end
                 end
             end
 
-            SetChatHoverButtonsAlpha(i, tabAlpha)
+            local buttonAlpha = (alwaysShow or hovered) and 1 or 0
+            SetChatHoverButtonsAlpha(i, buttonAlpha)
+            if i == selectedIndex then SetDockButtonsAlpha(buttonAlpha) end
 
             if cf and cf._dragonUIBgFrame and cf._dragonUIBgFrame:IsShown() then
                 local bgAlpha = styleIdleAlpha
@@ -321,6 +284,7 @@ local function EnsureChatButtonsHoverUpdater()
         local forceUpdate = ChatModsModule.frames.chatHoverForceUpdate
         ChatModsModule.frames.chatHoverForceUpdate = nil
 
+        local selectedIndex = GetSelectedChatIndex()
         local hasActiveTransition = false
         local wroteVisualState = false
 
@@ -329,12 +293,18 @@ local function EnsureChatButtonsHoverUpdater()
             -- OnShow hook set in ApplyChatFrameTweaks. Calling it on a throttle
             -- causes a visible flicker when Blizzard restores textures between ticks.
 
-            -- Mirror the tab's current alpha (Blizzard fades it via noMouseAlpha).
-            local tabAlpha = entry.tab and entry.tab:GetAlpha() or 0
-            if forceUpdate or entry.lastTabAlpha == nil or IsAlphaChanged(entry.lastTabAlpha, tabAlpha) then
-                SetChatHoverButtonsAlpha(entry.index, tabAlpha, entry)
-                entry.lastTabAlpha = tabAlpha
+            local selected = entry.index == selectedIndex
+            local hovered = IsChatButtonsHovered(entry.cf, entry.tab, entry.bf, entry.eb, selected)
+            local targetAlpha = (hovered or cfg and cfg.alwaysShowButtons == true) and 1 or 0
+            local currentAlpha = entry.bf:GetAlpha()
+            local buttonAlpha = targetAlpha == 1 and 1 or math.max(0, currentAlpha - 0.25)
+            if forceUpdate or IsAlphaChanged(currentAlpha, buttonAlpha) then
                 wroteVisualState = true
+            end
+            SetChatHoverButtonsAlpha(entry.index, buttonAlpha, entry)
+            if selected then SetDockButtonsAlpha(buttonAlpha) end
+            if hovered or IsAlphaChanged(buttonAlpha, targetAlpha) then
+                hasActiveTransition = true
             end
 
             -- Sync style background frame with tab fade.
@@ -363,15 +333,6 @@ local function EnsureChatButtonsHoverUpdater()
                 entry.lastEditboxAlpha = nil
             end
 
-            local hovered = (entry.tab and entry.tab:IsMouseOver())
-                or (entry.cf and entry.cf:IsMouseOver())
-                or (entry.bf and entry.bf:IsMouseOver())
-                or (entry.eb and (entry.eb:IsMouseOver() or entry.eb:HasFocus()))
-
-            local targetTabAlpha = hovered and 1 or ((entry.tab and entry.tab.noMouseAlpha) or 0)
-            if hovered or IsAlphaChanged(tabAlpha, targetTabAlpha) then
-                hasActiveTransition = true
-            end
         end
 
         if hasActiveTransition then
@@ -501,13 +462,10 @@ local function ApplyChatFrameTweaks()
                     upBtn = _G["ChatFrame" .. i .. "ButtonFrameUpButton"],
                     downBtn = _G["ChatFrame" .. i .. "ButtonFrameDownButton"],
                     bottomBtn = _G["ChatFrame" .. i .. "ButtonFrameBottomButton"],
-                    menuBtn = (i == 1) and _G.ChatFrameMenuButton or nil,
-                    friendsBtn = (i == 1) and _G.FriendsMicroButton or nil,
-                    lastTabAlpha = nil,
                     lastBgAlpha = nil,
                     lastEditboxAlpha = nil,
                 }
-                SetChatHoverButtonsVisible(i, false, entry)
+                SetChatHoverButtonsAlpha(i, ButtonsAlwaysShown() and 1 or 0, entry)
 
                 tinsert(ChatModsModule.frames.chatHoverEntries, entry)
             end
@@ -523,6 +481,12 @@ local function ApplyChatFrameTweaks()
             end
         end
     end
+
+    AttachChatHoverRefreshHooks(_G.ChatFrameMenuButton)
+    AttachChatHoverRefreshHooks(_G.FriendsMicroButton)
+    local overflow = GetOverflowButton()
+    AttachChatHoverRefreshHooks(overflow)
+    if overflow then AttachChatHoverRefreshHooks(overflow.list) end
 
     EnsureChatButtonsHoverUpdater()
     if ChatModsModule.applied then

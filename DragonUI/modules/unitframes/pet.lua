@@ -582,7 +582,7 @@ end
 
 -- Detached mode: position the anchor frame from its saved UIParent-relative offset.
 local function ApplyWidgetPosition()
-    if not PetFrameModule.anchor then return end
+    if not PetFrameModule.anchor or PetFrameModule.anchor.DragonUI_Dragging then return end
     if not addon.db or not addon.db.profile or not addon.db.profile.widgets then return end
 
     local widgetConfig = addon.db.profile.widgets.pet
@@ -597,7 +597,7 @@ end
 
 -- Keep the draggable overlay tracking the real frame while attached.
 local function SyncPetOverlayToRealFrame()
-    if not PetFrameModule.anchor then return end
+    if not PetFrameModule.anchor or PetFrameModule.anchor.DragonUI_Dragging then return end
     local config = addon.db and addon.db.profile and addon.db.profile.unitframe and addon.db.profile.unitframe.pet
     PetFrameModule.anchor:ClearAllPoints()
     if config and config.override then

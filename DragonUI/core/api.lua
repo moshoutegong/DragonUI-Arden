@@ -268,6 +268,7 @@ function addon.CreateUIFrame(width, height, frameName)
 
      frame:SetScript("OnDragStart", function(self, button)
          if not EditorActive() then return end
+         self.DragonUI_Dragging = true
          self.DragonUI_LayoutOffset = nil
          self:SetUserPlaced(true)
         self:StartMoving()
@@ -280,8 +281,10 @@ function addon.CreateUIFrame(width, height, frameName)
     end)
 
     frame:SetScript("OnDragStop", function(self)
-        if not EditorActive() then return end
+        if not self.DragonUI_Dragging then return end
         self:StopMovingOrSizing()
+        self.DragonUI_Dragging = nil
+        if not EditorActive() then return end
 
         -- AUTO-SAVE: Find this frame in EditableFrames and save position automatically
         for name, frameData in pairs(addon.EditableFrames) do
@@ -488,7 +491,12 @@ function addon.SaveUIFramePosition(frame, configPath1, configPath2)
         return
     end
 
-    local anchor, _, _, posX, posY = frame:GetPoint(1)
+    local anchor, relativeTo, relativePoint, posX, posY = frame:GetPoint(1)
+    if not anchor then return end
+    if (relativeTo == nil or relativeTo == UIParent) and relativePoint and relativePoint ~= anchor then
+        posX, posY = addon.GetAnchorOffset(frame, anchor, anchor)
+        if posX == nil then return end
+    end
 
     -- A module's automatic shift from the default spot (e.g. the pet bar stacked over stances) is not a move.
     local layoutOffset = frame.DragonUI_LayoutOffset

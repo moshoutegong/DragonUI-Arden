@@ -147,7 +147,7 @@ function UF.TargetStyle.Create(opts)
     -- ================================================================
 
     local function ApplyWidgetPosition()
-        if not Module.overlay then return end
+        if not Module.overlay or Module.overlay.DragonUI_Dragging then return end
         if InCombatLockdown() then
             if addon.CombatQueue then
                 addon.CombatQueue:Add(combatQueueKey, ApplyWidgetPosition)
@@ -193,7 +193,7 @@ function UF.TargetStyle.Create(opts)
             elapsed = elapsed + dt
 
             -- Re-apply often for a short window to win any delayed Blizzard reanchor.
-            if Module.configured then
+            if Module.configured and not (addon.EditorMode and addon.EditorMode:IsActive()) then
                 ApplyWidgetPosition()
             end
 

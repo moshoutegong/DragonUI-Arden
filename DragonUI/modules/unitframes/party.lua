@@ -184,7 +184,7 @@ end
 
 -- Function to apply position from widgets (similar to target.lua)
 local function ApplyWidgetPosition()
-    if not PartyFrames.anchor then
+    if not PartyFrames.anchor or PartyFrames.anchor.DragonUI_Dragging then
         return
     end
 

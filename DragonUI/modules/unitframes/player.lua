@@ -2936,7 +2936,7 @@ local function ApplyWidgetPosition()
         return
     end
 
-    if not Module.playerFrame then
+    if not Module.playerFrame or Module.playerFrame.DragonUI_Dragging then
         return
     end
 
@@ -3230,6 +3230,13 @@ local function InitializePlayerFrame()
 
     -- Create auxiliary frame
     Module.playerFrame = addon.CreateUIFrame(200, 75, "PlayerFrame")
+    Module.playerFrame:HookScript("OnDragStart", function(self)
+        self.DragonUI_Dragging = true
+    end)
+    Module.playerFrame:HookScript("OnDragStop", function(self)
+        self.DragonUI_Dragging = nil
+        ApplyWidgetPosition()
+    end)
 
     --  AUTOMATIC REGISTRATION IN CENTRALIZED SYSTEM
     addon:RegisterEditableFrame({
@@ -3237,8 +3244,17 @@ local function InitializePlayerFrame()
         frame = Module.playerFrame,
         blizzardFrame = PlayerFrame,
         configPath = {"widgets", "player"},
+        onShow = function()
+            addon.UnlockUIFramePoint(Module.playerFrame)
+            addon.UnlockUIFramePoint(PlayerFrame)
+        end,
         onHide = function()
-            ApplyPlayerConfig() -- Apply new configuration when exiting editor
+            Module.playerFrame.DragonUI_Dragging = nil
+            ApplyPlayerConfig()
+            if addon.IsWidgetCustomPositioned("player") then
+                addon.LockUIFramePoint(Module.playerFrame)
+                addon.LockUIFramePoint(PlayerFrame)
+            end
             UpdateLeadershipIcons() -- drops the editor's PvP emblem preview
         end,
         module = Module
@@ -4373,6 +4389,8 @@ hooksecurefunc(PlayerFrame, "SetPoint", function(self, point, relativeTo, relati
         end
         return
     end
+
+    if addon.EditorMode and addon.EditorMode:IsActive() then return end
 
     -- Blizzard only auto-anchors to UIParent TOPLEFT/CENTER; anything else is ours or another addon's.
     if point and relativeTo == UIParent and (point == "TOPLEFT" or point == "CENTER") then

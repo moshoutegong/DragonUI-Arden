@@ -928,7 +928,7 @@ local function BuildProfilesTab(scroll)
     C:AddSpacer(manager)
 
     -- Share inline controls
-    local shareChannel = "Party"
+    local shareChannel = "PARTY"
     local shareRow = C:AddRow(manager)
 
     C:AddDropdown(shareRow, {
@@ -936,10 +936,10 @@ local function BuildProfilesTab(scroll)
         getFunc = function() return shareChannel end,
         setFunc = function(val) shareChannel = val end,
         values = {
-            [LO["Whisper"] or "Whisper"] = "Whisper",
-            [LO["Party"] or "Party"]     = "Party",
-            [LO["Raid"] or "Raid"]       = "Raid",
-            [LO["Guild"] or "Guild"]     = "Guild",
+            WHISPER = LO["Whisper"] or "Whisper",
+            PARTY = LO["Party"] or "Party",
+            RAID = LO["Raid"] or "Raid",
+            GUILD = LO["Guild"] or "Guild",
         },
         width = 140,
     })
@@ -956,8 +956,9 @@ local function BuildProfilesTab(scroll)
             shareBtn:SetDisabled(true)
             shareBtn:SetText(LO["Sending..."] or "Sending...")
 
+            local distribution = shareChannel
             addon:After(0.1, function()
-                if shareChannel == "Whisper" then
+                if distribution == "WHISPER" then
                     -- Use a simple popup to ask for the target
                     StaticPopupDialogs["DRAGONUI_WHISPER_TARGET"] = StaticPopupDialogs["DRAGONUI_WHISPER_TARGET"] or {
                         text = LO["Enter a target player name for whisper."] or "Enter a target player name for whisper.",
@@ -982,8 +983,7 @@ local function BuildProfilesTab(scroll)
                     shareBtn:SetDisabled(false)
                     shareBtn:SetText(LO["Share"] or "Share")
                 else
-                    local distMap = { Party = "PARTY", Raid = "RAID", Guild = "GUILD" }
-                    DragonUI.SendProfile(distMap[shareChannel])
+                    DragonUI.SendProfile(distribution)
                     -- Keep the button showing "Sending..." so the user sees
                     -- the profile actually arrive in chat before re-enabling
                     addon:After(4.0, function()
