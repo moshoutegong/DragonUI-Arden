@@ -2308,6 +2308,11 @@ local function KK_SetupEmotionIconParsing()
     end
 end
 
+local function RefreshChannelButtonBar()
+    KK_DestroyChanBar()
+    KK_BuildChanBar()
+end
+
 -- Apply KK_Chat features
 local function ApplyKKChatFeatures()
     local cfg = GetModuleConfig()
@@ -2325,10 +2330,7 @@ local function ApplyKKChatFeatures()
         KK_SetupEmotionIconParsing()
     end
 
-    -- Build channel button bar
-    if cfg.enableChanBar then
-        KK_BuildChanBar()
-    end
+    RefreshChannelButtonBar()
 
     -- Register events for channel bar rebuild
     if not ChatModsModule.hooks.kkChatEvents then
@@ -2338,11 +2340,7 @@ local function ApplyKKChatFeatures()
 
         kkEventFrame:SetScript("OnEvent", function(self, event, ...)
             if not ChatModsModule.applied then return end
-            local cfg = GetModuleConfig()
-            if cfg.enableChanBar then
-                KK_DestroyChanBar()
-                KK_BuildChanBar()
-            end
+            RefreshChannelButtonBar()
         end)
 
         ChatModsModule.hooks.kkChatEvents = kkEventFrame
@@ -2837,6 +2835,8 @@ local function OnProfileChanged()
     if IsModuleEnabled() then
         if not ChatModsModule.applied then
             ApplyChatModsSystem()
+        else
+            RefreshChannelButtonBar()
         end
         ApplyEditBoxPosition()
         ApplyChatStyle()
@@ -2851,6 +2851,12 @@ local function OnProfileChanged()
 end
 
 -- Public API for options panel
+addon.RefreshChannelButtonBar = function()
+    if ChatModsModule.applied then
+        RefreshChannelButtonBar()
+    end
+end
+
 addon.ApplyChatStyle = function()
     if ChatModsModule.applied then
         ApplyChatStyle()

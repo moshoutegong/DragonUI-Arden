@@ -147,6 +147,7 @@ local MAP_PIN_NAME_FRAGMENTS = {
 -- uses a named minimap button (pfQuestIcon).
 local QUEST_ADDON_LAUNCHER_BUTTONS = {
     ["pfQuestIcon"] = true,
+    ["pfBrowserIcon"] = true,
     ["LibDBIcon10_Questie"] = true,
 }
 

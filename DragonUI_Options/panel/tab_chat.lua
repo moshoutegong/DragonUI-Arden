@@ -223,6 +223,9 @@ local function BuildChatTab(scroll)
         label = LO["Enable Channel Button Bar"],
         desc  = LO["Show a floating channel switching button bar above the chat editbox."],
         dbPath = "modules.chatmods.enableChanBar",
+        callback = function()
+            if addon.RefreshChannelButtonBar then addon.RefreshChannelButtonBar() end
+        end,
     })
 
     C:AddToggle(kkSection, {
