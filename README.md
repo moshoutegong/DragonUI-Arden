@@ -1,6 +1,7 @@
 # DragonUI-Arden
 
 面向 Arden（飞升）客户端的 DragonUI 整合版，基于 DragonUI CoA 4.1.1。
+DragonUI CoA 4.1.1上游版本：https://github.com/moshoutegong/DragonUI-CoA-CN
 
 ## 安装
 
