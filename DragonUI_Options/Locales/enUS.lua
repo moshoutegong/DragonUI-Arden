@@ -682,6 +682,8 @@ L["Border Color"] = true
 
 -- Gryphons
 L["Gryphons"] = true
+L["Sleeping Shiba"] = true
+L["Waving Shiba"] = true
 L["End-cap ornaments flanking the main action bar."] = true
 L["Style"] = true
 L["Gryphon Scale"] = true

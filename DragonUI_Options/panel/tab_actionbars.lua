@@ -421,6 +421,8 @@ local function BuildGeneralTab(scroll)
             old     = LO["Classic"],
             new     = LO["Dragonflight"],
             flying  = LO["Flying"],
+            shiba_sleep = LO["Sleeping Shiba"],
+            shiba_wave  = LO["Waving Shiba"],
             forever = LO["Forever"],
             none    = LO["Hidden"],
         },
@@ -508,6 +510,20 @@ local function BuildGeneralTab(scroll)
         width = 96,
         height = 56,
     })
+
+    for _, style in ipairs({
+        { "Sleeping Shiba", "ui-hud-actionbar-shiba-sleep-right" },
+        { "Waving Shiba", "ui-hud-actionbar-shiba-wave-left" },
+    }) do
+        local art = addon.AtlasShim.GetAtlasInfo(style[2])
+        C:AddTexturePreview(previewRow, {
+            label = LO[style[1]],
+            texture = art.filename,
+            texCoord = { art.leftTexCoord, art.rightTexCoord, art.topTexCoord, art.bottomTexCoord },
+            width = art.width,
+            height = art.height,
+        })
+    end
 end
 
 -- ============================================================================

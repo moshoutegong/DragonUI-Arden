@@ -130,6 +130,14 @@ local function literal(value)
 end
 
 local retailHudSheets = {
+	sheet(assets..'ActionBars\\shiba-wave.tga', 256, 256, {
+		{ "ui-hud-actionbar-shiba-wave-left", 82, 81, 4, 252, 4, 248 },
+		{ "ui-hud-actionbar-shiba-wave-right", 82, 81, 252, 4, 4, 248 },
+	}),
+	sheet(assets..'ActionBars\\shiba-sleep.tga', 256, 256, {
+		{ "ui-hud-actionbar-shiba-sleep-left", 82, 59, 252, 4, 4, 182 },
+		{ "ui-hud-actionbar-shiba-sleep-right", 82, 59, 4, 252, 4, 182 },
+	}),
 	sheet(uiactionbar2x_, 512, 1024, {
 		{ "_ui-hud-actionbar-divider-top", 10, 10, 421, 445, 833, 861 },
 		{ "_ui-hud-actionbar-divider-bottom", 10, 10, 395, 419, 833, 863 },

@@ -538,6 +538,8 @@ L["Border Color"] = "边框颜色"
 
 -- 狮鹫装饰
 L["Gryphons"] = "狮鹫装饰"
+L["Sleeping Shiba"] = "睡觉柴犬"
+L["Waving Shiba"] = "招手柴犬"
 L["End-cap ornaments flanking the main action bar."] = "主动作条两端的装饰纹样。"
 L["Style"] = "样式"
 L["Gryphon Scale"] = "狮鹫缩放"
