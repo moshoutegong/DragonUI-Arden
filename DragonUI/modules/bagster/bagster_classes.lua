@@ -1097,7 +1097,14 @@ do
             return max(rows, 1)
         end
 
-        local cap = maxScale * size
+        -- The item-scale setting is relative to the default window dimensions.
+        -- Raising the window size must also raise the cell-size limit.
+        local defaults = parent and mod.defaults[parent.key]
+        local baseWidth = defaults and defaults.w or 384
+        local baseHeight = defaults and defaults.h or 512
+        local windowScale = parent and max(1,
+            parent:GetWidth() / baseWidth, parent:GetHeight() / baseHeight) or 1
+        local cap = maxScale * size * windowScale
         local maxCols = max(1, min(n, floor(width / max(size * 0.5, 1))))
         local bestFit = 0
         for cols = 1, maxCols do
